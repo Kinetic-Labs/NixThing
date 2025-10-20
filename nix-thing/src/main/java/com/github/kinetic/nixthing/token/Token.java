@@ -1,4 +1,4 @@
-package com.github.kinetic.nixthing;
+package com.github.kinetic.nixthing.token;
 
 public class Token {
 

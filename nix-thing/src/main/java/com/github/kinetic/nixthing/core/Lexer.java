@@ -3,13 +3,21 @@ package com.github.kinetic.nixthing.core;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import com.github.kinetic.nixthing.core.Token;
-import com.github.kinetic.nixthing.core.TokenType;
 
 public class Lexer {
+
     private final String input;
     private int position = 0;
-    private static final Set<String> keywords = Set.of("let", "in", "true", "false", "if", "then", "else", "inherit");
+    private static final Set<String> keywords = Set.of(
+        "let",
+        "in",
+        "true",
+        "false",
+        "if",
+        "then",
+        "else",
+        "inherit"
+    );
 
     public Lexer(String input) {
         this.input = input;
@@ -20,7 +28,9 @@ public class Lexer {
         while (position < input.length()) {
             char current = input.charAt(position);
             if (current == '#') {
-                while (position < input.length() && input.charAt(position) != '\n') {
+                while (
+                    position < input.length() && input.charAt(position) != '\n'
+                ) {
                     position++;
                 }
                 continue;
@@ -43,7 +53,10 @@ public class Lexer {
             } else {
                 switch (current) {
                     case '=':
-                        if (position + 1 < input.length() && input.charAt(position + 1) == '=') {
+                        if (
+                            position + 1 < input.length() &&
+                            input.charAt(position + 1) == '='
+                        ) {
                             tokens.add(new Token(TokenType.OPERATOR, "=="));
                             position += 2;
                         } else {
@@ -59,7 +72,7 @@ public class Lexer {
                         tokens.add(new Token(TokenType.RBRACE, "}"));
                         position++;
                         break;
-                    case '(': 
+                    case '(':
                         tokens.add(new Token(TokenType.LPAREN, "("));
                         position++;
                         break;
@@ -92,11 +105,18 @@ public class Lexer {
                     case '*':
                     case '/':
                     case '%':
-                        tokens.add(new Token(TokenType.OPERATOR, Character.toString(current)));
+                        tokens.add(
+                            new Token(
+                                TokenType.OPERATOR,
+                                Character.toString(current)
+                            )
+                        );
                         position++;
                         break;
                     default:
-                        throw new RuntimeException("Unexpected character: " + current);
+                        throw new RuntimeException(
+                            "Unexpected character: " + current
+                        );
                 }
             }
         }
@@ -105,7 +125,10 @@ public class Lexer {
 
     private String readInteger() {
         StringBuilder builder = new StringBuilder();
-        while (position < input.length() && Character.isDigit(input.charAt(position))) {
+        while (
+            position < input.length() &&
+            Character.isDigit(input.charAt(position))
+        ) {
             builder.append(input.charAt(position));
             position++;
         }
@@ -125,7 +148,11 @@ public class Lexer {
 
     private String readIdentifier() {
         StringBuilder builder = new StringBuilder();
-        while (position < input.length() && (Character.isLetterOrDigit(input.charAt(position)) || input.charAt(position) == '_')) {
+        while (
+            position < input.length() &&
+            (Character.isLetterOrDigit(input.charAt(position)) ||
+                input.charAt(position) == '_')
+        ) {
             builder.append(input.charAt(position));
             position++;
         }

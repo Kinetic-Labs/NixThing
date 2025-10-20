@@ -1,4 +1,4 @@
-package com.github.kinetic.nixthing;
+package com.github.kinetic.nixthing.token;
 
 public enum TokenType {
     INTEGER,
@@ -15,5 +15,5 @@ public enum TokenType {
     EQUALS,
     SEMICOLON,
     COLON,
-    DOT
+    DOT,
 }

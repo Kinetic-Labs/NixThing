@@ -1,5 +1,6 @@
 let
-  isEven = n: n % 2 == 0;
+  isN10 = n: n == 10;
+
   options = {
     enableFoo = true;
     greeting = "hello";
@@ -16,7 +17,7 @@ if options.enableFoo then
   in
   {
     inherit message;
-    other = if isEven 10 then "it's even" else "it's odd";
+    other = if isN10 10 then "it's 10" else "it's not 10";
     packageList = packages;
   }
 else

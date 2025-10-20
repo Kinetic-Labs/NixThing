@@ -2,12 +2,12 @@ package com.github.kinetic.nixthing.core;
 
 import com.github.kinetic.nixthing.ast.NixExpression;
 import com.github.kinetic.nixthing.lang.Lazy;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 public class Environment {
+
     private final Environment parent;
     private final Map<String, Lazy> variables = new HashMap<>();
 
@@ -17,6 +17,10 @@ public class Environment {
 
     public Environment getParent() {
         return parent;
+    }
+
+    public Map<String, Lazy> getVariables() {
+        return variables;
     }
 
     public void define(String name, NixExpression value, Environment env) {
