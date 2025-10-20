@@ -1,9 +1,9 @@
 package com.github.kinetic.nixthing.ast;
 
-public class NixParen extends NixExpression {
+public final class NixParen extends NixExpression {
     private final NixExpression expression;
 
-    public NixParen(NixExpression expression) {
+    public NixParen(final NixExpression expression) {
         this.expression = expression;
     }
 

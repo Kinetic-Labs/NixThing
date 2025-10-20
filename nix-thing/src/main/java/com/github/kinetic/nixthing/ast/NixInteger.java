@@ -1,9 +1,9 @@
 package com.github.kinetic.nixthing.ast;
 
-public class NixInteger extends NixExpression {
+public final class NixInteger extends NixExpression {
     private final int value;
 
-    public NixInteger(int value) {
+    public NixInteger(final int value) {
         this.value = value;
     }
 
@@ -12,10 +12,15 @@ public class NixInteger extends NixExpression {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        NixInteger that = (NixInteger) o;
+    public boolean equals(final Object object) {
+        if(this == object)
+            return true;
+
+        if(object == null || getClass() != object.getClass())
+            return false;
+
+        NixInteger that = (NixInteger) object;
+
         return value == that.value;
     }
 

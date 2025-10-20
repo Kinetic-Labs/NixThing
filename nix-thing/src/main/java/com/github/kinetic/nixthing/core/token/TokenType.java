@@ -1,4 +1,4 @@
-package com.github.kinetic.nixthing.token;
+package com.github.kinetic.nixthing.core.token;
 
 public enum TokenType {
     INTEGER,
@@ -6,14 +6,14 @@ public enum TokenType {
     IDENTIFIER,
     KEYWORD,
     OPERATOR,
+    EQUALS,
     LBRACE,
     RBRACE,
     LPAREN,
     RPAREN,
     LBRACK,
     RBRACK,
-    EQUALS,
     SEMICOLON,
     COLON,
-    DOT,
+    DOT
 }

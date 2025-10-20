@@ -2,13 +2,13 @@ package com.github.kinetic.nixthing.lang;
 
 import com.github.kinetic.nixthing.ast.NixExpression;
 import com.github.kinetic.nixthing.ast.NixFunction;
-import com.github.kinetic.nixthing.core.Environment;
+import com.github.kinetic.nixthing.core.enviornment.Environment;
 
-public class NixClosure extends NixExpression {
+public final class NixClosure extends NixExpression {
     private final NixFunction function;
     private final Environment environment;
 
-    public NixClosure(NixFunction function, Environment environment) {
+    public NixClosure(final NixFunction function, final Environment environment) {
         this.function = function;
         this.environment = environment;
     }

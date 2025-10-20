@@ -1,11 +1,11 @@
 package com.github.kinetic.nixthing.ast;
 
-public class NixBinaryOp extends NixExpression {
+public final class NixBinaryOp extends NixExpression {
     private final NixExpression left;
     private final NixExpression right;
     private final String operator;
 
-    public NixBinaryOp(NixExpression left, String operator, NixExpression right) {
+    public NixBinaryOp(final NixExpression left, final String operator, final NixExpression right) {
         this.left = left;
         this.operator = operator;
         this.right = right;

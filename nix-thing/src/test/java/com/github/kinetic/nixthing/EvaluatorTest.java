@@ -1,9 +1,17 @@
 package com.github.kinetic.nixthing;
 
+import com.github.kinetic.nixthing.ast.NixExpression;
+import com.github.kinetic.nixthing.ast.NixInteger;
+import com.github.kinetic.nixthing.ast.NixString;
+import com.github.kinetic.nixthing.core.enviornment.Environment;
+import com.github.kinetic.nixthing.core.eval.Evaluator;
+import com.github.kinetic.nixthing.core.lexer.Lexer;
+import com.github.kinetic.nixthing.core.parser.Parser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.util.List;
-import static org.junit.jupiter.api.Assertions.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class EvaluatorTest {
 
@@ -63,5 +71,12 @@ class EvaluatorTest {
         NixExpression result = parseAndEval("if 1 == 1 then \"yes\" else \"no\"");
         assertInstanceOf(NixString.class, result);
         assertEquals("yes", ((NixString) result).getValue());
+    }
+
+    @Test
+    void testEvalMultiLineString() {
+        NixExpression result = parseAndEval("''hello\nworld''");
+        assertInstanceOf(NixString.class, result);
+        assertEquals("hello\nworld", ((NixString) result).getValue());
     }
 }

@@ -1,10 +1,10 @@
 package com.github.kinetic.nixthing.ast;
 
-public class NixSelect extends NixExpression {
+public final class NixSelect extends NixExpression {
     private final NixExpression set;
     private final NixIdentifier attr;
 
-    public NixSelect(NixExpression set, NixIdentifier attr) {
+    public NixSelect(final NixExpression set, final NixIdentifier attr) {
         this.set = set;
         this.attr = attr;
     }

@@ -1,10 +1,10 @@
 package com.github.kinetic.nixthing.ast;
 
-public class NixFunction extends NixExpression {
+public final class NixFunction extends NixExpression {
     private final NixIdentifier argument;
     private final NixExpression body;
 
-    public NixFunction(NixIdentifier argument, NixExpression body) {
+    public NixFunction(final NixIdentifier argument, final NixExpression body) {
         this.argument = argument;
         this.body = body;
     }

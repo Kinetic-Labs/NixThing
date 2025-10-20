@@ -2,10 +2,10 @@ package com.github.kinetic.nixthing.ast;
 
 import java.util.Objects;
 
-public class NixString extends NixExpression {
+public final class NixString extends NixExpression {
     private final String value;
 
-    public NixString(String value) {
+    public NixString(final String value) {
         this.value = value;
     }
 
@@ -14,10 +14,15 @@ public class NixString extends NixExpression {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        NixString nixString = (NixString) o;
+    public boolean equals(final Object object) {
+        if(this == object)
+            return true;
+
+        if(object == null || getClass() != object.getClass())
+            return false;
+
+        NixString nixString = (NixString) object;
+
         return Objects.equals(value, nixString.value);
     }
 

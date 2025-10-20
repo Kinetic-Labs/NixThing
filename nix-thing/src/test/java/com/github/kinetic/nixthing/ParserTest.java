@@ -1,10 +1,14 @@
 package com.github.kinetic.nixthing;
 
+import com.github.kinetic.nixthing.ast.*;
+import com.github.kinetic.nixthing.core.lexer.Lexer;
+import com.github.kinetic.nixthing.core.parser.Parser;
+import com.github.kinetic.nixthing.core.token.Token;
 import org.junit.jupiter.api.Test;
+
 import java.util.List;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class ParserTest {
     @Test
@@ -151,10 +155,10 @@ class ParserTest {
         assertInstanceOf(NixLet.class, expression);
         NixLet letExpr = (NixLet) expression;
         assertEquals(1, letExpr.getBindings().size());
-        NixBinding binding = letExpr.getBindings().get(0);
-        assertEquals("x", binding.getName().getName());
-        assertInstanceOf(NixInteger.class, binding.getValue());
-        assertEquals(1, ((NixInteger) binding.getValue()).getValue());
+        NixBinding binding = letExpr.getBindings().getFirst();
+        assertEquals("x", binding.name().getName());
+        assertInstanceOf(NixInteger.class, binding.value());
+        assertEquals(1, ((NixInteger) binding.value()).getValue());
 
         assertInstanceOf(NixBinaryOp.class, letExpr.getInExpression());
         NixBinaryOp inExpr = (NixBinaryOp) letExpr.getInExpression();
@@ -232,7 +236,7 @@ class ParserTest {
         NixExpression expression = parser.parse();
 
         assertInstanceOf(NixBoolean.class, expression);
-        assertEquals(true, ((NixBoolean) expression).getValue());
+        assertTrue(((NixBoolean) expression).getValue());
     }
 
     @Test
@@ -244,7 +248,7 @@ class ParserTest {
         NixExpression expression = parser.parse();
 
         assertInstanceOf(NixBoolean.class, expression);
-        assertEquals(false, ((NixBoolean) expression).getValue());
+        assertFalse(((NixBoolean) expression).getValue());
     }
 
     @Test
@@ -259,7 +263,7 @@ class ParserTest {
         NixIf ifExpr = (NixIf) expression;
 
         assertInstanceOf(NixBoolean.class, ifExpr.getCondition());
-        assertEquals(true, ((NixBoolean) ifExpr.getCondition()).getValue());
+        assertTrue(((NixBoolean) ifExpr.getCondition()).getValue());
 
         assertInstanceOf(NixInteger.class, ifExpr.getThenExpression());
         assertEquals(1, ((NixInteger) ifExpr.getThenExpression()).getValue());
@@ -299,15 +303,15 @@ class ParserTest {
         NixSet set = (NixSet) expression;
         assertEquals(2, set.getBindings().size());
 
-        NixBinding binding1 = set.getBindings().get(0);
-        assertEquals("a", binding1.getName().getName());
-        assertInstanceOf(NixInteger.class, binding1.getValue());
-        assertEquals(1, ((NixInteger) binding1.getValue()).getValue());
+        NixBinding binding1 = set.getBindings().getFirst();
+        assertEquals("a", binding1.name().getName());
+        assertInstanceOf(NixInteger.class, binding1.value());
+        assertEquals(1, ((NixInteger) binding1.value()).getValue());
 
         NixBinding binding2 = set.getBindings().get(1);
-        assertEquals("b", binding2.getName().getName());
-        assertInstanceOf(NixInteger.class, binding2.getValue());
-        assertEquals(2, ((NixInteger) binding2.getValue()).getValue());
+        assertEquals("b", binding2.name().getName());
+        assertInstanceOf(NixInteger.class, binding2.value());
+        assertEquals(2, ((NixInteger) binding2.value()).getValue());
     }
 
     @Test
@@ -322,13 +326,25 @@ class ParserTest {
         NixSet set = (NixSet) expression;
         assertEquals(2, set.getBindings().size());
 
-        NixBinding binding1 = set.getBindings().get(0);
-        assertEquals("a", binding1.getName().getName());
-        assertInstanceOf(NixInherit.class, binding1.getValue());
+        NixBinding binding1 = set.getBindings().getFirst();
+        assertEquals("a", binding1.name().getName());
+        assertInstanceOf(NixInherit.class, binding1.value());
 
         NixBinding binding2 = set.getBindings().get(1);
-        assertEquals("b", binding2.getName().getName());
-        assertInstanceOf(NixInteger.class, binding2.getValue());
-        assertEquals(2, ((NixInteger) binding2.getValue()).getValue());
+        assertEquals("b", binding2.name().getName());
+        assertInstanceOf(NixInteger.class, binding2.value());
+        assertEquals(2, ((NixInteger) binding2.value()).getValue());
+    }
+
+    @Test
+    void testParseMultiLineString() {
+        String input = "''hello\nworld''";
+        Lexer lexer = new Lexer(input);
+        List<Token> tokens = lexer.tokenize();
+        Parser parser = new Parser(tokens);
+        NixExpression expression = parser.parse();
+
+        assertInstanceOf(NixString.class, expression);
+        assertEquals("hello\nworld", ((NixString) expression).getValue());
     }
 }

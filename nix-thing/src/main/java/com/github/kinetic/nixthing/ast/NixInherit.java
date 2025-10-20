@@ -1,9 +1,9 @@
 package com.github.kinetic.nixthing.ast;
 
-public class NixInherit extends NixExpression {
+public final class NixInherit extends NixExpression {
     private final NixIdentifier identifier;
 
-    public NixInherit(NixIdentifier identifier) {
+    public NixInherit(final NixIdentifier identifier) {
         this.identifier = identifier;
     }
 

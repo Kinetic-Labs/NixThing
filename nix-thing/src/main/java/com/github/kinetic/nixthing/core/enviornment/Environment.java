@@ -1,17 +1,18 @@
-package com.github.kinetic.nixthing.core;
+package com.github.kinetic.nixthing.core.enviornment;
 
 import com.github.kinetic.nixthing.ast.NixExpression;
 import com.github.kinetic.nixthing.lang.Lazy;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class Environment {
+public final class Environment {
 
     private final Environment parent;
     private final Map<String, Lazy> variables = new HashMap<>();
 
-    public Environment(Environment parent) {
+    public Environment(final Environment parent) {
         this.parent = parent;
     }
 
@@ -23,21 +24,21 @@ public class Environment {
         return variables;
     }
 
-    public void define(String name, NixExpression value, Environment env) {
+    public void define(final String name, final NixExpression value, final Environment env) {
         variables.put(name, new Lazy(value, env));
     }
 
-    public void defineEvaluated(String name, NixExpression value) {
+    public void defineEvaluated(final String name, final NixExpression value) {
         variables.put(name, Lazy.evaluated(value));
     }
 
-    public Optional<NixExpression> lookup(String name) {
-        if (variables.containsKey(name)) {
+    public Optional<NixExpression> lookup(final String name) {
+        if(variables.containsKey(name))
             return Optional.of(variables.get(name).getValue());
-        }
-        if (parent != null) {
+
+        if(parent != null)
             return parent.lookup(name);
-        }
+
         return Optional.empty();
     }
 }
