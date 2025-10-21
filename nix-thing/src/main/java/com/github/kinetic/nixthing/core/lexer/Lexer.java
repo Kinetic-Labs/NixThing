@@ -17,7 +17,8 @@ public final class Lexer {
             "if",
             "then",
             "else",
-            "inherit"
+            "inherit",
+            "import"
     );
     private final String input;
     private int position = 0;

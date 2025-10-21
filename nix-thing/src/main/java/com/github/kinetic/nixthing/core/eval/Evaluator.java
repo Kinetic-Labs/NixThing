@@ -2,12 +2,28 @@ package com.github.kinetic.nixthing.core.eval;
 
 import com.github.kinetic.nixthing.ast.*;
 import com.github.kinetic.nixthing.core.enviornment.Environment;
+import com.github.kinetic.nixthing.core.lexer.Lexer;
+import com.github.kinetic.nixthing.core.parser.Parser;
 import com.github.kinetic.nixthing.lang.NixClosure;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Evaluator {
+
+    private final Set<String> importedFiles = new HashSet<>();
+    private Path basePath = Paths.get(".");
+
+    public void setBasePath(Path basePath) {
+        this.basePath = basePath;
+    }
 
     public NixExpression eval(final NixExpression expression, final Environment environment) {
         if(expression instanceof NixInteger ||
@@ -99,6 +115,10 @@ public class Evaluator {
                 throw new RuntimeException("Attempted to call a non-function: " + funcExpr);
 
             final NixExpression arg = eval(((NixFunctionCall) expression).getArgument(), environment);
+
+            if(closure.getFunction().getBody() == null)
+                return evalBuiltin(closure, (NixInteger) arg);
+
             final Environment funcEnv = new Environment(closure.getEnvironment());
 
             funcEnv.defineEvaluated(closure.getFunction().getArgument().getName(), arg);
@@ -106,7 +126,134 @@ public class Evaluator {
             return eval(closure.getFunction().getBody(), funcEnv);
         }
 
+        if(expression instanceof NixImport)
+            return evalImport((NixImport) expression, environment);
+
+        if(expression instanceof NixBuiltins) {
+            return createBuiltinsSet();
+        }
+
         throw new RuntimeException("Unknown expression type to evaluate: " + expression.getClass().getName());
+    }
+
+    private NixExpression evalBuiltin(final NixClosure closure, final NixInteger arg) {
+        final String builtinName = closure.toString();
+
+        if("<builtin:mod>".equals(builtinName)) {
+            // mod is curried: mod x y -> x % y
+            // first call returns closure waiting for second argument
+            if(arg == null)
+                throw new RuntimeException("builtins.mod expects integer arguments");
+
+            final int firstArg = arg.getValue();
+
+            final NixFunction secondFunc = new NixFunction(
+                    new NixIdentifier("y"),
+                    null
+            );
+            return new NixClosure(secondFunc, null) {
+                @Override
+                public String toString() {
+                    return "<builtin:mod-partial:" + firstArg + ">";
+                }
+            };
+        }
+
+        if(builtinName.startsWith("<builtin:mod-partial:")) {
+            final int firstArg = Integer.parseInt(builtinName.substring(21, builtinName.length() - 1));
+
+            if(arg == null)
+                throw new RuntimeException("builtins.mod expects integer arguments");
+
+            final int secondArg = arg.getValue();
+
+            if(secondArg == 0)
+                throw new RuntimeException("Division by zero in builtins.mod");
+
+            return new NixInteger(firstArg % secondArg);
+        }
+
+        if("<builtin:debug>".equals(builtinName)) {
+            System.out.println("[nix-thing :: builtins.debug] " + arg);
+
+            return arg;
+        }
+
+        throw new RuntimeException("Unknown builtin function: " + builtinName);
+    }
+
+    private NixSet createBuiltinsSet() {
+        final Environment builtinsEnv = new Environment(null);
+        final List<NixBinding> bindings = new ArrayList<>();
+
+        final NixFunction modFunc = new NixFunction(
+                new NixIdentifier("x"),
+                null
+        );
+        final NixClosure modClosure = new NixClosure(modFunc, null) {
+            @Override
+            public String toString() {
+                return "<builtin:mod>";
+            }
+        };
+        bindings.add(new NixBinding(new NixIdentifier("mod"), modClosure));
+        builtinsEnv.defineEvaluated("mod", modClosure);
+
+        final NixFunction debugFunc = new NixFunction(
+                new NixIdentifier("msg"),
+                null
+        );
+        final NixClosure debugClosure = new NixClosure(debugFunc, null) {
+            @Override
+            public String toString() {
+                return "<builtin:debug>";
+            }
+        };
+        bindings.add(new NixBinding(new NixIdentifier("debug"), debugClosure));
+        builtinsEnv.defineEvaluated("debug", debugClosure);
+
+        return new NixSet(bindings, builtinsEnv);
+    }
+
+    private NixExpression evalImport(final NixImport importExpr, final Environment environment) {
+        final NixExpression pathExpr = eval(importExpr.getPath(), environment);
+
+        if(!(pathExpr instanceof NixString))
+            throw new RuntimeException("Import path must be a string, got: " + pathExpr);
+
+        final String pathStr = ((NixString) pathExpr).getValue();
+        final Path resolvedPath = basePath.resolve(pathStr).normalize();
+
+        final String canonicalPath;
+        try {
+            canonicalPath = resolvedPath.toRealPath().toString();
+        } catch(IOException e) {
+            throw new RuntimeException("Cannot resolve import path: " + pathStr, e);
+        }
+
+        if(importedFiles.contains(canonicalPath))
+            throw new RuntimeException("Circular import detected: " + pathStr);
+
+        importedFiles.add(canonicalPath);
+
+        try {
+            final String content = Files.readString(resolvedPath, StandardCharsets.UTF_8);
+            final Lexer lexer = new Lexer(content);
+            final Parser parser = new Parser(lexer.tokenize());
+            final NixExpression parsedExpr = parser.parse();
+
+            final Path previousBasePath = this.basePath;
+            this.basePath = resolvedPath.getParent();
+
+            try {
+                return eval(parsedExpr, environment);
+            } finally {
+                this.basePath = previousBasePath;
+                importedFiles.remove(canonicalPath);
+            }
+        } catch(IOException e) {
+            throw new RuntimeException("Failed to read import file: " + pathStr, e);
+        }
     }
 
     private NixExpression evalBinaryOp(final NixBinaryOp binaryOp, final Environment environment) {
@@ -126,8 +273,6 @@ public class Evaluator {
                     return new NixInteger(leftVal * rightVal);
                 case "/":
                     return new NixInteger(leftVal / rightVal);
-                case "%":
-                    return new NixInteger(leftVal % rightVal);
                 case "==":
                     return new NixBoolean(leftVal == rightVal);
             }

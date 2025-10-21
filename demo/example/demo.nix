@@ -1,23 +1,23 @@
 let
-  isN10 = n: n == 10;
+  common = import "example/common.nix";
 
   options = {
     enableFoo = true;
-    greeting = "hello";
+    greeting = "hello, " + common.author;
   };
   packages = [
     "package1"
     "package2"
   ];
-  message = "inherited message";
+  message = null;
 in
 if options.enableFoo then
   let
-    message = options.greeting + " world";
+    message = options.greeting + "! Check out LogThing ;)";
   in
   {
     inherit message;
-    other = if isN10 10 then "it's 10" else "it's not 10";
+    other = if common.isEven 10 then "it's even" else "it's not even";
     packageList = packages;
   }
 else

@@ -7,8 +7,11 @@ import com.github.kinetic.nixthing.core.lexer.Lexer;
 import com.github.kinetic.nixthing.core.parser.Parser;
 import com.github.kinetic.nixthing.lang.Lazy;
 
-import java.io.InputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -16,10 +19,10 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"DuplicatedCode", "CallToPrintStackTrace"})
 public class Main {
 
-    public static void main(String[] args) {
+    static void main() {
         runDemo();
-        runConfigDemo("Basic Configuration", "/config_demo.nix");
-        runConfigDemo("Advanced Configuration", "/advanced_config.nix");
+        runConfigDemo("Basic Configuration", "example/config_demo.nix");
+        runConfigDemo("Advanced Configuration", "example/advanced_config.nix");
     }
 
     private static void runDemo() {
@@ -28,10 +31,10 @@ public class Main {
         System.out.println("=".repeat(50));
 
         try {
-            String input = loadResource("/demo.nix");
+            String input = loadFile("example/demo.nix");
 
-            System.out.println("\nInput:");
-            System.out.println(indent(input));
+//            System.out.println("\nInput:");
+//            System.out.println(indent(input));
 
             Lexer lexer = new Lexer(input);
             Parser parser = new Parser(lexer.tokenize());
@@ -40,6 +43,7 @@ public class Main {
             System.out.println("\nParsing successful");
 
             Evaluator evaluator = new Evaluator();
+            evaluator.setBasePath(Paths.get("."));
             Environment globalEnv = new Environment(null);
             NixExpression evaluatedResult = evaluator.eval(
                     parsedAst,
@@ -55,16 +59,16 @@ public class Main {
         }
     }
 
-    private static void runConfigDemo(String title, String resourcePath) {
+    private static void runConfigDemo(String title, String filePath) {
         System.out.println("\n" + "=".repeat(50));
         System.out.println(title);
         System.out.println("=".repeat(50));
 
         try {
-            String input = loadResource(resourcePath);
+            String input = loadFile(filePath);
 
-            System.out.println("\nInput:");
-            System.out.println(indent(input));
+//            System.out.println("\nInput:");
+//            System.out.println(indent(input));
 
             Lexer lexer = new Lexer(input);
             Parser parser = new Parser(lexer.tokenize());
@@ -73,6 +77,7 @@ public class Main {
             System.out.println("\nParsing successful");
 
             Evaluator evaluator = new Evaluator();
+            evaluator.setBasePath(Paths.get("."));
             Environment globalEnv = new Environment(null);
             NixExpression evaluatedResult = evaluator.eval(
                     parsedAst,
@@ -198,20 +203,12 @@ public class Main {
                 .collect(Collectors.joining(", ", "[ ", " ]"));
     }
 
-    private static String loadResource(String path) throws Exception {
-        try(InputStream is = Main.class.getResourceAsStream(path)) {
-            if(is == null) {
-                throw new RuntimeException("Resource not found: " + path);
-            }
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+    private static String loadFile(String filePath) throws IOException {
+        Path path = Paths.get(filePath);
+        if(!Files.exists(path)) {
+            throw new IOException("File not found: " + filePath);
         }
-    }
-
-    private static String indent(String text) {
-        return text
-                .lines()
-                .map(line -> "  " + line)
-                .collect(Collectors.joining("\n"));
+        return Files.readString(path, StandardCharsets.UTF_8);
     }
 
     private static Optional<NixExpression> getAttr(

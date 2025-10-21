@@ -4,7 +4,7 @@ import com.github.kinetic.nixthing.ast.NixExpression;
 import com.github.kinetic.nixthing.ast.NixFunction;
 import com.github.kinetic.nixthing.core.enviornment.Environment;
 
-public final class NixClosure extends NixExpression {
+public class NixClosure extends NixExpression {
     private final NixFunction function;
     private final Environment environment;
 

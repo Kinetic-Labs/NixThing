@@ -107,6 +107,9 @@ public final class Parser {
         if(token.type() == TokenType.KEYWORD && token.value().equals("let")) {
             return parseLetExpression();
         }
+        if(token.type() == TokenType.KEYWORD && token.value().equals("import")) {
+            return parseImportExpression();
+        }
         if(token.type() == TokenType.LBRACE) return parseSetExpression();
 
         if(token.type() == TokenType.LBRACK) return parseListExpression();
@@ -124,6 +127,16 @@ public final class Parser {
 
         position--;
         return null;
+    }
+
+    private NixExpression parseImportExpression() {
+        final NixExpression path = parsePrimary();
+
+        if(path == null) {
+            throw new RuntimeException("Expected path after 'import'");
+        }
+
+        return new NixImport(path);
     }
 
     private NixExpression parseLetExpression() {
