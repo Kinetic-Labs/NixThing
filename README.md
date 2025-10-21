@@ -1,6 +1,6 @@
 # NixThing
 
-NixThing is a simple interpreter for the Nix language, written in Java.
+NixThing is a simple parser, ast, and evaluator for the Nix language, written in Java.
 
 ## Project Structure
 
