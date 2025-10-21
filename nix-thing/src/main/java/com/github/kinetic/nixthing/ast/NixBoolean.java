@@ -1,6 +1,7 @@
 package com.github.kinetic.nixthing.ast;
 
 public final class NixBoolean extends NixExpression {
+
     private final boolean value;
 
     public NixBoolean(final boolean value) {
@@ -19,7 +20,7 @@ public final class NixBoolean extends NixExpression {
         if(object == null || getClass() != object.getClass())
             return false;
 
-        NixBoolean that = (NixBoolean) object;
+        final NixBoolean that = (NixBoolean) object;
 
         return value == that.value;
     }

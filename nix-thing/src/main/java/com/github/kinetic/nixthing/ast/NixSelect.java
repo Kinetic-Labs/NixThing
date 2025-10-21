@@ -1,6 +1,7 @@
 package com.github.kinetic.nixthing.ast;
 
 public final class NixSelect extends NixExpression {
+
     private final NixExpression set;
     private final NixIdentifier attr;
 

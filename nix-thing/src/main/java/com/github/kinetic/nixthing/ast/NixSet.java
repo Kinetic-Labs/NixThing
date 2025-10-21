@@ -5,6 +5,7 @@ import com.github.kinetic.nixthing.core.enviornment.Environment;
 import java.util.List;
 
 public final class NixSet extends NixExpression {
+
     private final List<NixBinding> bindings;
     private final Environment env;
 

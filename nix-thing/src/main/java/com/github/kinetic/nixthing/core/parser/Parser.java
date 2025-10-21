@@ -3,6 +3,7 @@ package com.github.kinetic.nixthing.core.parser;
 import com.github.kinetic.nixthing.ast.*;
 import com.github.kinetic.nixthing.core.token.Token;
 import com.github.kinetic.nixthing.core.token.TokenType;
+import com.github.kinetic.nixthing.exception.ParsingException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,10 +65,9 @@ public final class Parser {
     private NixExpression parseInfix(final NixExpression left) {
         final String operator = tokens.get(position).value();
         final int precedence = getPrecedence(operator);
+        final NixExpression right = parseExpression(precedence);
 
         position++;
-
-        final NixExpression right = parseExpression(precedence);
 
         return new NixBinaryOp(left, operator, right);
     }
@@ -82,43 +82,49 @@ public final class Parser {
     }
 
     private NixExpression parsePrimary() {
-        if(position >= tokens.size()) return null;
+        if(position >= tokens.size())
+            return null;
 
         final Token token = tokens.get(position++);
 
-        if(token.type() == TokenType.INTEGER) return new NixInteger(Integer.parseInt(token.value()));
+        if(token.type() == TokenType.INTEGER)
+            return new NixInteger(Integer.parseInt(token.value()));
 
-        if(token.type() == TokenType.STRING) return new NixString(token.value());
+        if(token.type() == TokenType.STRING)
+            return new NixString(token.value());
 
         if(token.type() == TokenType.IDENTIFIER) {
-            if(token.value().equals("builtins")) return new NixBuiltins();
+            if(token.value().equals("builtins"))
+                return new NixBuiltins();
 
             return new NixIdentifier(token.value());
         }
-        if(token.type() == TokenType.KEYWORD && token.value().equals("true")) {
+        if(token.type() == TokenType.KEYWORD && token.value().equals("true"))
             return new NixBoolean(true);
-        }
-        if(token.type() == TokenType.KEYWORD && token.value().equals("false")) {
-            return new NixBoolean(false);
-        }
-        if(token.type() == TokenType.KEYWORD && token.value().equals("if")) {
-            return parseIfExpression();
-        }
-        if(token.type() == TokenType.KEYWORD && token.value().equals("let")) {
-            return parseLetExpression();
-        }
-        if(token.type() == TokenType.KEYWORD && token.value().equals("import")) {
-            return parseImportExpression();
-        }
-        if(token.type() == TokenType.LBRACE) return parseSetExpression();
 
-        if(token.type() == TokenType.LBRACK) return parseListExpression();
+        if(token.type() == TokenType.KEYWORD && token.value().equals("false"))
+            return new NixBoolean(false);
+
+        if(token.type() == TokenType.KEYWORD && token.value().equals("if"))
+            return parseIfExpression();
+
+        if(token.type() == TokenType.KEYWORD && token.value().equals("let"))
+            return parseLetExpression();
+
+        if(token.type() == TokenType.KEYWORD && token.value().equals("import"))
+            return parseImportExpression();
+
+        if(token.type() == TokenType.LBRACE)
+            return parseSetExpression();
+
+        if(token.type() == TokenType.LBRACK)
+            return parseListExpression();
 
         if(token.type() == TokenType.LPAREN) {
-            NixExpression expression = parseExpression(0);
-            if(position >= tokens.size() || tokens.get(position).type() != TokenType.RPAREN) {
-                throw new RuntimeException("Expected ')'");
-            }
+            final NixExpression expression = parseExpression(0);
+
+            if(position >= tokens.size() || tokens.get(position).type() != TokenType.RPAREN)
+                throw new ParsingException("Expected ')'");
 
             position++;
 
@@ -126,15 +132,15 @@ public final class Parser {
         }
 
         position--;
+
         return null;
     }
 
     private NixExpression parseImportExpression() {
         final NixExpression path = parsePrimary();
 
-        if(path == null) {
-            throw new RuntimeException("Expected path after 'import'");
-        }
+        if(path == null)
+            throw new ParsingException("Expected path after 'import'");
 
         return new NixImport(path);
     }
@@ -145,25 +151,24 @@ public final class Parser {
         while(position < tokens.size() && (tokens.get(position).type() != TokenType.KEYWORD || !tokens.get(position).value().equals("in"))) {
             final NixIdentifier name = new NixIdentifier(tokens.get(position++).value());
 
-            if(position >= tokens.size() || tokens.get(position).type() != TokenType.EQUALS) {
-                throw new RuntimeException("Expected '='");
-            }
+            if(position >= tokens.size() || tokens.get(position).type() != TokenType.EQUALS)
+                throw new ParsingException("Expected '='");
 
             position++;
 
             final NixExpression value = parseExpression(0);
 
             bindings.add(new NixBinding(name, value));
+
             if(position < tokens.size() && tokens.get(position).type() == TokenType.SEMICOLON) {
                 position++;
             } else if(position >= tokens.size() || (tokens.get(position).type() != TokenType.KEYWORD || !tokens.get(position).value().equals("in"))) {
-                throw new RuntimeException("Expected ';' or 'in' after binding in let expression.");
+                throw new ParsingException("Expected ';' or 'in' after binding in let expression.");
             }
         }
 
-        if(position >= tokens.size() || !tokens.get(position).value().equals("in")) {
-            throw new RuntimeException("Expected 'in'");
-        }
+        if(position >= tokens.size() || !tokens.get(position).value().equals("in"))
+            throw new ParsingException("Expected 'in'");
 
         position++;
 
@@ -175,16 +180,14 @@ public final class Parser {
     private NixExpression parseIfExpression() {
         final NixExpression condition = parseExpression(0);
 
-        if(position >= tokens.size() || !tokens.get(position).value().equals("then")) {
-            throw new RuntimeException("Expected 'then'");
-        }
+        if(position >= tokens.size() || !tokens.get(position).value().equals("then"))
+            throw new ParsingException("Expected 'then'");
 
         position++;
         final NixExpression thenExpression = parseExpression(0);
 
-        if(position >= tokens.size() || !tokens.get(position).value().equals("else")) {
-            throw new RuntimeException("Expected 'else'");
-        }
+        if(position >= tokens.size() || !tokens.get(position).value().equals("else"))
+            throw new ParsingException("Expected 'else'");
 
         position++;
 
@@ -196,12 +199,11 @@ public final class Parser {
     private NixExpression parseListExpression() {
         final List<NixExpression> elements = new ArrayList<>();
 
-        while(position < tokens.size() && tokens.get(position).type() != TokenType.RBRACK) {
+        while(position < tokens.size() && tokens.get(position).type() != TokenType.RBRACK)
             elements.add(parsePrimary());
-        }
-        if(position >= tokens.size() || tokens.get(position).type() != TokenType.RBRACK) {
-            throw new RuntimeException("Expected ']'");
-        }
+
+        if(position >= tokens.size() || tokens.get(position).type() != TokenType.RBRACK)
+            throw new ParsingException("Expected ']'");
 
         position++;
 
@@ -224,7 +226,7 @@ public final class Parser {
                 final NixIdentifier name = new NixIdentifier(tokens.get(position++).value());
 
                 if(position >= tokens.size() || tokens.get(position).type() != TokenType.EQUALS)
-                    throw new RuntimeException("Expected '=' after identifier '" + name.getName() + "' in set.");
+                    throw new ParsingException("Expected '=' after identifier '" + name.getName() + "' in set.");
 
                 position++;
 
@@ -238,7 +240,7 @@ public final class Parser {
         }
 
         if(position >= tokens.size() || tokens.get(position).type() != TokenType.RBRACE)
-            throw new RuntimeException("Expected '}' to close set.");
+            throw new ParsingException("Expected '}' to close set.");
 
         position++;
 

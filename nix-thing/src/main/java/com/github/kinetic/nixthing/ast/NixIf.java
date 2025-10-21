@@ -1,6 +1,7 @@
 package com.github.kinetic.nixthing.ast;
 
 public final class NixIf extends NixExpression {
+
     private final NixExpression condition;
     private final NixExpression thenExpression;
     private final NixExpression elseExpression;

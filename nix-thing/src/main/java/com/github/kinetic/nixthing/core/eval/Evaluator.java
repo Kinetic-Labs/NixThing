@@ -4,6 +4,7 @@ import com.github.kinetic.nixthing.ast.*;
 import com.github.kinetic.nixthing.core.enviornment.Environment;
 import com.github.kinetic.nixthing.core.lexer.Lexer;
 import com.github.kinetic.nixthing.core.parser.Parser;
+import com.github.kinetic.nixthing.exception.evaluator.*;
 import com.github.kinetic.nixthing.lang.NixClosure;
 
 import java.io.IOException;
@@ -21,10 +22,22 @@ public class Evaluator {
     private final Set<String> importedFiles = new HashSet<>();
     private Path basePath = Paths.get(".");
 
-    public void setBasePath(Path basePath) {
+    /**
+     * Set basepath for evaluator
+     *
+     * @param basePath new path to use
+     */
+    public void setBasePath(final Path basePath) {
         this.basePath = basePath;
     }
 
+    /**
+     * Evaluate a given expression inside a given environment
+     *
+     * @param expression  expression to evaluate
+     * @param environment environment to evaluate inside of
+     * @return the evaluated expression
+     */
     public NixExpression eval(final NixExpression expression, final Environment environment) {
         if(expression instanceof NixInteger ||
                 expression instanceof NixString ||
@@ -35,7 +48,7 @@ public class Evaluator {
 
         if(expression instanceof NixIdentifier)
             return environment.lookup(((NixIdentifier) expression).getName())
-                    .orElseThrow(() -> new RuntimeException("Undefined variable: " + ((NixIdentifier) expression).getName()));
+                    .orElseThrow(() -> new UndefinedException(((NixIdentifier) expression).getName()));
 
         if(expression instanceof NixParen)
             return eval(((NixParen) expression).getExpression(), environment);
@@ -67,9 +80,9 @@ public class Evaluator {
 
             if(environment.getParent() != null)
                 return environment.getParent().lookup(name)
-                        .orElseThrow(() -> new RuntimeException("Inherited variable '" + name + "' not found in scope."));
+                        .orElseThrow(() -> new InheritErrorException.InheritScopeErrorException(name));
 
-            throw new RuntimeException("Cannot inherit '" + name + "' from top-level scope.");
+            throw new InheritErrorException.InheritTopLevelScopeErrorException(name);
         }
 
         if(expression instanceof NixLet) {
@@ -129,13 +142,19 @@ public class Evaluator {
         if(expression instanceof NixImport)
             return evalImport((NixImport) expression, environment);
 
-        if(expression instanceof NixBuiltins) {
+        if(expression instanceof NixBuiltins)
             return createBuiltinsSet();
-        }
 
-        throw new RuntimeException("Unknown expression type to evaluate: " + expression.getClass().getName());
+        throw new UnknownExpressionException(expression.getClass().getName());
     }
 
+    /**
+     * Evaluate a builtin function
+     *
+     * @param closure closure of builtin
+     * @param arg     the argument of builtin
+     * @return the result of running builtin
+     */
     private NixExpression evalBuiltin(final NixClosure closure, final NixInteger arg) {
         final String builtinName = closure.toString();
 
@@ -143,7 +162,7 @@ public class Evaluator {
             // mod is curried: mod x y -> x % y
             // first call returns closure waiting for second argument
             if(arg == null)
-                throw new RuntimeException("builtins.mod expects integer arguments");
+                throw new UnknownFunctionException("builtin", "mod", "Hint: 'mod' only accepts integer arguments!");
 
             final int firstArg = arg.getValue();
 
@@ -163,7 +182,7 @@ public class Evaluator {
             final int firstArg = Integer.parseInt(builtinName.substring(21, builtinName.length() - 1));
 
             if(arg == null)
-                throw new RuntimeException("builtins.mod expects integer arguments");
+                throw new UnknownFunctionException("builtin", "mod", "Hint: 'mod' only accepts integer arguments!");
 
             final int secondArg = arg.getValue();
 
@@ -179,13 +198,12 @@ public class Evaluator {
             return arg;
         }
 
-        throw new RuntimeException("Unknown builtin function: " + builtinName);
+        throw new UnknownFunctionException("builtin", builtinName);
     }
 
     private NixSet createBuiltinsSet() {
         final Environment builtinsEnv = new Environment(null);
         final List<NixBinding> bindings = new ArrayList<>();
-
         final NixFunction modFunc = new NixFunction(
                 new NixIdentifier("x"),
                 null
@@ -196,6 +214,7 @@ public class Evaluator {
                 return "<builtin:mod>";
             }
         };
+
         bindings.add(new NixBinding(new NixIdentifier("mod"), modClosure));
         builtinsEnv.defineEvaluated("mod", modClosure);
 
@@ -209,17 +228,25 @@ public class Evaluator {
                 return "<builtin:debug>";
             }
         };
+
         bindings.add(new NixBinding(new NixIdentifier("debug"), debugClosure));
         builtinsEnv.defineEvaluated("debug", debugClosure);
 
         return new NixSet(bindings, builtinsEnv);
     }
 
+    /**
+     * Evaluate and resolve an import
+     *
+     * @param importExpr  import expression
+     * @param environment environment to evaluate inside
+     * @return the resolved import
+     */
     private NixExpression evalImport(final NixImport importExpr, final Environment environment) {
         final NixExpression pathExpr = eval(importExpr.getPath(), environment);
 
         if(!(pathExpr instanceof NixString))
-            throw new RuntimeException("Import path must be a string, got: " + pathExpr);
+            throw new UnresolvedImportException("Import path must be a string, got: " + pathExpr);
 
         final String pathStr = ((NixString) pathExpr).getValue();
         final Path resolvedPath = basePath.resolve(pathStr).normalize();
@@ -227,8 +254,8 @@ public class Evaluator {
         final String canonicalPath;
         try {
             canonicalPath = resolvedPath.toRealPath().toString();
-        } catch(IOException e) {
-            throw new RuntimeException("Cannot resolve import path: " + pathStr, e);
+        } catch(IOException ioException) {
+            throw new UnresolvedImportException("Cannot resolve import path: " + pathStr, ioException);
         }
 
         if(importedFiles.contains(canonicalPath))
@@ -251,11 +278,18 @@ public class Evaluator {
                 this.basePath = previousBasePath;
                 importedFiles.remove(canonicalPath);
             }
-        } catch(IOException e) {
-            throw new RuntimeException("Failed to read import file: " + pathStr, e);
+        } catch(IOException ioException) {
+            throw new UnresolvedImportException(pathStr, ioException);
         }
     }
 
+    /**
+     * Evaluate a binary operation
+     *
+     * @param binaryOp    operation to evaluate
+     * @param environment environment to evaluate inside of
+     * @return the evaluated expression
+     */
     private NixExpression evalBinaryOp(final NixBinaryOp binaryOp, final Environment environment) {
         final NixExpression left = eval(binaryOp.getLeft(), environment);
         final NixExpression right = eval(binaryOp.getRight(), environment);
@@ -283,6 +317,6 @@ public class Evaluator {
                 return new NixString(((NixString) left).getValue() + ((NixString) right).getValue());
         }
 
-        throw new RuntimeException("Cannot apply operator '" + binaryOp.getOperator() + "' to " + left + " and " + right);
+        throw new InvalidBinaryOperationException(binaryOp.getOperator(), left, right);
     }
 }

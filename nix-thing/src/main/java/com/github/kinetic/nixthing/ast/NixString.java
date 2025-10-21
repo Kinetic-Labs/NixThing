@@ -3,6 +3,7 @@ package com.github.kinetic.nixthing.ast;
 import java.util.Objects;
 
 public final class NixString extends NixExpression {
+
     private final String value;
 
     public NixString(final String value) {
@@ -21,7 +22,7 @@ public final class NixString extends NixExpression {
         if(object == null || getClass() != object.getClass())
             return false;
 
-        NixString nixString = (NixString) object;
+        final NixString nixString = (NixString) object;
 
         return Objects.equals(value, nixString.value);
     }

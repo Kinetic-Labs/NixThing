@@ -1,6 +1,7 @@
 package com.github.kinetic.nixthing.ast;
 
 public final class NixFunctionCall extends NixExpression {
+
     private final NixExpression function;
     private final NixExpression argument;
 

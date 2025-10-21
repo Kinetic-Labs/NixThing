@@ -1,6 +1,7 @@
 package com.github.kinetic.nixthing.ast;
 
 public final class NixBinaryOp extends NixExpression {
+
     private final NixExpression left;
     private final NixExpression right;
     private final String operator;

@@ -2,6 +2,7 @@ package com.github.kinetic.nixthing.core.lexer;
 
 import com.github.kinetic.nixthing.core.token.Token;
 import com.github.kinetic.nixthing.core.token.TokenType;
+import com.github.kinetic.nixthing.exception.LexicalAnalysisException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +55,7 @@ public final class Lexer {
                 if(position + 1 < input.length() && input.charAt(position + 1) == '\'') {
                     tokens.add(new Token(TokenType.STRING, readMultiLineString()));
                 } else {
-                    throw new RuntimeException("Unexpected character: " + current);
+                    throw new LexicalAnalysisException("Unexpected character: " + current);
                 }
             } else if(Character.isLetter(current) || current == '_') {
                 final String identifier = readIdentifier();
@@ -135,7 +136,7 @@ public final class Lexer {
                         break;
                     }
                     default: {
-                        throw new RuntimeException(
+                        throw new LexicalAnalysisException(
                                 "Unexpected character: " + current
                         );
                     }
@@ -212,6 +213,6 @@ public final class Lexer {
             }
         }
 
-        throw new RuntimeException("Unterminated multi-line string");
+        throw new LexicalAnalysisException("Unterminated multi-line string");
     }
 }

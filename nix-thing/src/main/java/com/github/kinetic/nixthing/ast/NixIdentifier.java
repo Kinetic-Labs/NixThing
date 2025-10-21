@@ -3,6 +3,7 @@ package com.github.kinetic.nixthing.ast;
 import java.util.Objects;
 
 public final class NixIdentifier extends NixExpression {
+
     private final String name;
 
     public NixIdentifier(final String name) {

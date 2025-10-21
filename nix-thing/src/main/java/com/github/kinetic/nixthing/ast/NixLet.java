@@ -3,6 +3,7 @@ package com.github.kinetic.nixthing.ast;
 import java.util.List;
 
 public final class NixLet extends NixExpression {
+
     private final List<NixBinding> bindings;
     private final NixExpression inExpression;
 

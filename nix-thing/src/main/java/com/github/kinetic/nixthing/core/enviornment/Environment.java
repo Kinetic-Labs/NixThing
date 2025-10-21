@@ -24,14 +24,33 @@ public final class Environment {
         return variables;
     }
 
+    /**
+     * Define an environment variable
+     *
+     * @param name  name of variable
+     * @param value value of variable
+     * @param env   the environment to define in
+     */
     public void define(final String name, final NixExpression value, final Environment env) {
         variables.put(name, new Lazy(value, env));
     }
 
+    /**
+     * Define an evaluated environment variable
+     *
+     * @param name  the name of variable
+     * @param value the value of variable
+     */
     public void defineEvaluated(final String name, final NixExpression value) {
         variables.put(name, Lazy.evaluated(value));
     }
 
+    /**
+     * Look for a variable in a given environment
+     *
+     * @param name name of variable
+     * @return {@link NixExpression} if found, nothing if not
+     */
     public Optional<NixExpression> lookup(final String name) {
         if(variables.containsKey(name))
             return Optional.of(variables.get(name).getValue());
